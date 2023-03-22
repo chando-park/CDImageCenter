@@ -23,6 +23,6 @@ let package = Package(
             dependencies: []),
         .testTarget(
             name: "CDImageCenterTests",
-            dependencies: ["CDImageCenter"]),
+            dependencies: ["CDImageCenter"])
     ]
 )

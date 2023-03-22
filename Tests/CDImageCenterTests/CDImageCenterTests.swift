@@ -2,10 +2,23 @@ import XCTest
 @testable import CDImageCenter
 
 final class CDImageCenterTests: XCTestCase {
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(CDImageCenter().text, "Hello, World!")
+    
+    var imageloadOperationQueue: OperationQueue?
+    
+    override func setUpWithError() throws {
+        self.imageloadOperationQueue = OperationQueue()
+        self.imageloadOperationQueue?.maxConcurrentOperationCount = 1
+    }
+    
+    override func tearDownWithError() throws {
+        
+    }
+    
+    func testLoadImage() throws {
+
+        let ex = self.expectation(description: "testLoadImage")
+        let op = ImageloaderOperation(keyType: .url(address: "")) { image, error in
+            
+        }
     }
 }
