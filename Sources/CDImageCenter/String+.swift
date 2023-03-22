@@ -13,12 +13,12 @@ import typealias CommonCrypto.CC_LONG
 
 public extension String {
     
-    public enum DataConetedError: Error{
+    enum DataConetedError: Error{
         case invalidURL(urlStr: String)
     }
     
-    public var md5: String {
-        guard let messageData = self.data(using:String.Encoding.utf8) else { return nil }
+    var md5: String {
+        guard let messageData = self.data(using:String.Encoding.utf8) else { return self }
         var digestData = Data(count: Int(CC_MD5_DIGEST_LENGTH))
 
         _ = digestData.withUnsafeMutableBytes {digestBytes in
@@ -27,7 +27,7 @@ public extension String {
             }
         }
 
-        return digestData
+        return String(data: digestData, encoding: .utf8) ?? self
     }
 
     public func asURL() throws -> URL {

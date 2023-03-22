@@ -49,24 +49,29 @@ class LFE_Images<F: FolderType>: NSObject {
         }
     }
 
-    private var imageCaches : NSCache = NSCache<AnyObject,AnyObject>()
-    
-//    static let center = LFE_Images()
-    
-    func getfilePathImgagData(key: String) -> UIImage? {
-        return self.imageCaches.object(forKey: key as AnyObject) as? UIImage
+    private var _imageCaches : NSCache = NSCache<AnyObject,AnyObject>()
+    private var _loadOperations : NSCache = NSCache<AnyObject,AnyObject>()
+    private var _imageLoadQueue : OperationQueue = {
+        let ilq = OperationQueue()
+        ilq.name = "imageLoadQueueName"
+        ilq.maxConcurrentOperationCount = 1
+        return ilq
+    }()
+
+    func obtainImgae(by key: String) -> UIImage? {
+        return self._imageCaches.object(forKey: key as AnyObject) as? UIImage
     }
     
     func loadImages(folder: F, imageNames: [String], imageType: ImageType = .png, completion: @escaping (NSCache<AnyObject, AnyObject>, Bool) -> ()) {
         
         var loadedCount: Int = 0
-        let imageCaches : NSCache = NSCache<AnyObject,AnyObject>()
+        let _imageCaches : NSCache = NSCache<AnyObject,AnyObject>()
         DispatchQueue.global(qos: .userInteractive).async {
             for name in imageNames {
                 if let f_o = Bundle.main.path(forResource: folder.path + name, ofType: imageType.extentionName), let image = UIImage(named: f_o) {
-                    if let _ = imageCaches.object(forKey: name as AnyObject){
+                    if let _ = _imageCaches.object(forKey: name as AnyObject){
                     }else{
-                        imageCaches.setObject(image, forKey: name as AnyObject)
+                        _imageCaches.setObject(image, forKey: name as AnyObject)
                     }
                 }
                 loadedCount += 1
@@ -74,41 +79,63 @@ class LFE_Images<F: FolderType>: NSObject {
             
             DispatchQueue.main.async {
                 if loadedCount == imageNames.count  {
-                    completion(imageCaches, true)
+                    completion(_imageCaches, true)
                 }else{
-                    completion(imageCaches, false)
+                    completion(_imageCaches, false)
                 }
             }
         }
     }
-    
-    func loadImage(folder: F, imageName: String?, imageType: ImageType = .png) -> UIImage? {
-        if let image = imageCaches.object(forKey: imageName as AnyObject){
-            return image as? UIImage
-        }else{
-            
-            guard let imageName = imageName else {
-                return nil
-            }
 
-            if let f_o = Bundle.main.path(forResource: folder.path + imageName, ofType: imageType.extentionName), let image = UIImage(named: f_o) {
-                imageCaches.setObject(image, forKey: imageName as AnyObject)
-//                print("folder in \(folder.path) loaded")
-                return image
-            }else{
-                print("\(folder)m \(imageName) load fail")
-                return nil
+    public func loadImage(urlStr: String, completedCallback: @escaping ImageloaderCompletedCallback) {
+        
+        if _isExistOperation(key: urlStr){
+            return
+        }
+        
+        let downOP = ImageloaderOperation(keyType: .bundle(path: "")) { image, error in
+            if let image = image{
+                self.saveCache(image, key: "")
             }
+            completedCallback(image, error)
+        }
+        self._saveOperation(downOP, key: urlStr)
+        self._imageLoadQueue.addOperation(downOP)
+    }
+    
+    public func saveCache(_ image: UIImage, key: String) {
+        _imageCaches.setObject(image, forKey: key as AnyObject)
+    }
+    
+    //캐시된 이미지
+    private func _savedCache(key: String) -> UIImage? {
+        _imageCaches.object(forKey: key as AnyObject) as? UIImage
+    }
+    
+    //오퍼레이션 저장...
+    private func _saveOperation(_ op: ImageloaderOperation, key: String) {
+        _loadOperations.setObject(op, forKey: key as AnyObject)
+    }
+    
+    //오퍼레이션 삭제
+    private func _removeOperation(key: String){
+        if _isExistOperation(key: key){
+            _loadOperations.removeObject(forKey: key as AnyObject)
         }
     }
-    
-    func loadImage(url: URL?, complted: @escaping (_ image: UIImage?)->()){
-//        SDWebImageManager.shared().loadImage(with: url, options: .retryFailed, progress: nil) { image, data, error, type, success, url in
-//            complted(image)
-//        }
+    //오페레이션?
+    private func _isExistOperation(key: String) -> Bool{
+        if let _ = _loadOperations.object(forKey: key as AnyObject){
+            return true
+        }
+        return false
     }
-    
+    //모든 캐시 삭제
+    @objc private func removeAllCache(){
+        self._imageCaches.removeAllObjects()
+    }
+
     func removeAllCaches() {
-        self.imageCaches.removeAllObjects()
+        self._imageCaches.removeAllObjects()
     }
 }
