@@ -17,8 +17,14 @@ final class CDImageCenterTests: XCTestCase {
     func testLoadImage() throws {
 
         let ex = self.expectation(description: "testLoadImage")
-        let op = ImageloaderOperation(keyType: .url(address: "")) { image, error in
+        let op = ImageloaderOperation(keyType: .url(address: "https://img.littlefox.co.kr/static/contents/series/FS0076/featured.jpg?1637110453")) { image, error in
+            ex.fulfill()
             
+            XCTAssertNotNil(image, error?.localizedDescription ?? "unknowned named")
         }
+        
+        self.imageloadOperationQueue?.addOperation(op)
+        
+        wait(for: [ex], timeout: 4)
     }
 }

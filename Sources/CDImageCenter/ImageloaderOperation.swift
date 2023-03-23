@@ -15,14 +15,30 @@ public class ImageloaderOperation: Operation {
     enum KeyType{
         case bundle(path: String)
         case url(address: String)
+        
+        var key: String{
+            switch self {
+            case .url(let address):
+                return address
+            case .bundle(let path):
+                return path
+            }
+        }
     }
 
-    let keyType : KeyType
-    var completedCallback : ImageloaderCompletedCallback?
+    private let _keyType : KeyType
+    private var _completedCallback : ImageloaderCompletedCallback?
     
-    init(keyType: KeyType, completedCallback: @escaping ImageloaderCompletedCallback) {
-        self.keyType = keyType
-        self.completedCallback = completedCallback
+    var key: String{
+        _keyType.key
+    }
+    
+    init(keyType: KeyType) {
+        self._keyType = keyType
+    }
+    
+    func setCompleted(completedCallback: @escaping ImageloaderCompletedCallback){
+        self._completedCallback = completedCallback
     }
     
     override public func main() {
@@ -37,7 +53,7 @@ public class ImageloaderOperation: Operation {
         
         let image : UIImage? = {
 
-            switch self.keyType {
+            switch self._keyType {
             case .bundle(let path):
                 
                 let image = UIImage(contentsOfFile: path)
@@ -62,7 +78,7 @@ public class ImageloaderOperation: Operation {
         }()
 
         DispatchQueue.main.async {
-            self.completedCallback?(image,error)
+            self._completedCallback?(image,error)
         }
     }
 }
