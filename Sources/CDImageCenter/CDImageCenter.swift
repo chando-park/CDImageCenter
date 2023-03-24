@@ -2,27 +2,13 @@
 
 import UIKit
 
-/**
- public enum Folder: String{
-     case intro = "Intro"
-     case `class` = "Class"
-     case coach = "Coach"
-     case etc = "Etc"
-     case quiz = "Quiz"
-     case record = "Record"
-     case flash_card = "FlashCards"
-     case gnb = "GNB"
-     case game = "Game"
-
- }
- */
-
 public protocol FolderType{
     var path: String {get}
 }
 
-
-public class LFE_Images: NSObject {
+public class CDImagesCenter: NSObject {
+    
+    public typealias ImageloaderCompletedCallback = (_ image: UIImage?,_ error: Error?) -> ()
     
     public enum ImageType {
         case png
@@ -35,19 +21,6 @@ public class LFE_Images: NSObject {
             case .jpg:
                 return "jpg"
             }
-        }
-    }
-    
-    public enum ImageLocationType{
-        case bundle(folder: FolderType)
-        case web(address: String)
-        
-        var path: String?{
-            ""
-        }
-        
-        var key: String?{
-            path?.md5
         }
     }
 
@@ -63,46 +36,21 @@ public class LFE_Images: NSObject {
     func obtainImage(by key: String) -> UIImage? {
         return self._imageCaches.object(forKey: key.md5 as AnyObject) as? UIImage
     }
-    
-    func loadImages(imageNames: [ImageLocationType], imageType: ImageType = .png, completion: @escaping (Bool) -> ()) {
-        
-        var loadedCount: Int = 0
-        let _imageCaches : NSCache = NSCache<AnyObject,AnyObject>()
-        DispatchQueue.global(qos: .userInteractive).async {
-            for name in imageNames {
-//                if let f_o = Bundle.main.path(forResource: folder.path + name, ofType: imageType.extentionName), let image = UIImage(named: f_o) {
-                if let f_o = name.path, let image = UIImage(named: f_o) {
-                    if let _ = _imageCaches.object(forKey: name as AnyObject){
-                    }else{
-                        _imageCaches.setObject(image, forKey: name as AnyObject)
-                    }
-                }
-                loadedCount += 1
-            }
-            
-            DispatchQueue.main.async {
-                if loadedCount == imageNames.count  {
-                    completion(true)
-                }else{
-                    completion(false)
-                }
-            }
-        }
-    }
 
-    public func loadImage(op: ImageloaderOperation, completedCallback: @escaping ImageloaderCompletedCallback) {
+    public func loadImage(factory: ImageOperationFactory, completedCallback: @escaping ImageloaderCompletedCallback) {
         
-        if _isExistOperation(key: op.key){
+        if _isExistOperation(key: factory.key){
             return
         }
 
+        let op = factory.operation
         op.setCompleted { image, error in
             if let image = image{
-                self._saveCache(image, key: op.key)
+                self._saveCache(image, key: factory.key)
             }
             completedCallback(image, error)
         }
-        self._saveOperation(op, key: op.key)
+        self._saveOperation(op, key: factory.key)
         
     }
     

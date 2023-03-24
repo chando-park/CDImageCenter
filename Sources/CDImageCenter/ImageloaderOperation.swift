@@ -8,32 +8,39 @@
 import UIKit
 
 
-public typealias ImageloaderCompletedCallback = (_ image: UIImage?,_ error: Error?) -> ()
+public enum ImageOperationFactory{
+    case asset(name: String)
+    case bundle(path: String)
+    case url(address: String)
+    
+    var key: String{
+        switch self {
+        case .url(let address):
+            return address
+        case .bundle(let path):
+            return path
+        case .asset(let name):
+            return name
+        }
+    }
+    
+    var operation: ImageloaderOperation {
+        ImageloaderOperation(keyType: self)
+    }
+}
 
 public class ImageloaderOperation: Operation {
     
-    enum KeyType{
-        case bundle(path: String)
-        case url(address: String)
-        
-        var key: String{
-            switch self {
-            case .url(let address):
-                return address
-            case .bundle(let path):
-                return path
-            }
-        }
-    }
+    public typealias ImageloaderCompletedCallback = (_ image: UIImage?,_ error: Error?) -> ()
 
-    private let _keyType : KeyType
+    private let _keyType : ImageOperationFactory
     private var _completedCallback : ImageloaderCompletedCallback?
     
     var key: String{
         _keyType.key
     }
     
-    init(keyType: KeyType) {
+    init(keyType: ImageOperationFactory) {
         self._keyType = keyType
     }
     
@@ -54,6 +61,10 @@ public class ImageloaderOperation: Operation {
         let image : UIImage? = {
 
             switch self._keyType {
+                
+            case .asset(name: let name):
+                return UIImage(named: name)
+                
             case .bundle(let path):
                 
                 let image = UIImage(contentsOfFile: path)
@@ -74,6 +85,8 @@ public class ImageloaderOperation: Operation {
                 
                 return nil
                 
+            
+
             }
         }()
 
