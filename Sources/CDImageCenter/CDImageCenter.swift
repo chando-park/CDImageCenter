@@ -40,6 +40,7 @@ public class CDImagesCenter: NSObject {
     public func loadImage(factory: ImageOperationFactory, completedCallback: @escaping ImageloaderCompletedCallback) {
         
         if _isExistOperation(key: factory.key){
+            completedCallback(nil, nil)
             return
         }
 
